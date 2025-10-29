@@ -1,70 +1,102 @@
 # interface/menu.py
 
-from core import validation
-from core import database
-from core import hashing
+import tkinter as tk
+from tkinter import messagebox
+from core import validation, database, hashing
 
-#Prompts user to choose between login, signup, or exit
-def displayMenu():
-    print("Welcome")
-    print("Choose between the following options\n")
-    print("[1] Login")
-    print("[2] Create Account")
-    print("[3] Exit\n")
-    while True:
-        rawInput = input("Enter Choice: ")
-        
-        try:
-            userInput = int(rawInput)
-        except ValueError:
-            print("Error, enter a number.")
-            continue 
+class LoginApp:
+    def __init__(self, root):
+        #Initialize the main application window
+        self.root = root
+        self.root.title("Login System")
+        self.root.geometry("300x200")
+        self.root.resizable(False,False)
 
-        if(userInput in [1,2,3]):
-            return userInput 
-        else:
-            print("Error, wrong value, try again...")
+        #Ensure database is created or exists
+        database.createDB() 
 
-#Checks if input for username is valid, if not prompts user to re-enter username
-def usernameInput():
-    while True:
-        username = input("Create Username: ")
-        if validation.usernameValid(username):
-            return username
-        else:
-            continue #loop again    
+        #start in login mode by defualt
+        self.isLoginMode = True 
 
-#Checks if ipnut for password is valid, if not prompts user to re-enter username
-def passwordInput():
-    while True:
-        password = input("Create Password: ")
-        if validation.passwordValid(password):
-            return password
-        else:
-            continue # loop again
+        #Create widgets - labels, entries, buttons
+        #Title Label
+        self.label = tk.Label(root, text="Login", font=("Arial", 16, "bold"))
+        self.label.pack(pady=10)
 
-#Prompts user to enter username and password to create an account
-def signupMenu():
-    database.createDB() #Check for / create database
-    print("\nSignup Menu")
-    print("Please enter the following details to create an account.\n")
-    username = usernameInput()
-    password = passwordInput()
-    hashword = hashing.hashFunc(password)
-    database.addUser(username, hashword)
+        #Frame for labels and entries
+        self.frame = tk.Frame(root)
+        self.frame.pack(pady=5)
 
-#Promts user to enter username and password to login
-def loginMenu():
-    print("\nLogin Menu")
-    print("Please enter your login details.\n")
+        #Username label and entry
+        tk.Label(self.frame, text="Username:").grid(row=0, column=0, sticky="e", padx=5, pady=5)
+        self.usernameEntry = tk.Entry(self.frame, width=20)
+        self.usernameEntry.grid(row=0,column=1,padx=5,pady=5)
 
-    while True:
-        username = input("Enter Username: ")
-        password = input("Enter Password: ")
+        #Password label and entry
+        tk.Label(self.frame, text="Password:").grid(row=1, column=0, sticky="e", padx=5, pady=5)
+        self.passwordEntry = tk.Entry(self.frame, show="*", width=20)
+        self.passwordEntry.grid(row=1, column=1, padx=5, pady=5)
+
+        #Login/signup button
+        self.actionButton = tk.Button(root, text="Login", command=self.login)
+        self.actionButton.pack(pady=5)
+
+        #toggle mode button
+        self.toggleButton = tk.Button(root, text="Create an account", command=self.toggleMode)
+        self.toggleButton.pack(pady=5)
+
+    #Login function
+    def login(self):
+        #Gets user input from entries
+        username = self.usernameEntry.get()
+        password = self.passwordEntry.get()
+
         if database.usernameExists(username) and hashing.hashCheck(password, username):
-            print(f"Login Successful! Welcome back, {username}!")
-            return
+            messagebox.showinfo("Login Successful", f"Welcome back, {username}!")
         else:
-            print("Error: Invalid username or password, try again...\n")
-            continue #loop again
-    
+            messagebox.showerror("Login Failed", "Invalid username or password.")
+
+    #Signup function
+    def signup(self):
+        #Gets user input from entries
+        username = self.usernameEntry.get()
+        password = self.passwordEntry.get()
+
+        #Validate Username
+        userMsg = validation.usernameValid(username)
+        if userMsg: 
+            messagebox.showerror("Invalid Username:", userMsg)
+            return
+
+        #Validate Password
+        passMsg = validation.passwordValid(password)
+        if passMsg:
+            messagebox.showerror("Invalid Password:", passMsg)
+            return
+        
+        #Create new account
+        hashWord = hashing.hashFunc(password)
+        if database.addUser(username, hashWord):
+            messagebox.showinfo("Success", "Account created successfully for {}.".format(username))
+        else:
+            messagebox.showerror("Error", "Failed to create account. Please try again.")
+
+
+
+    #Toggle between login and signup modes
+    def toggleMode(self):
+        self.isLoginMode = not self.isLoginMode #toggles the mode
+
+        if self.isLoginMode: #if in signup mode, switch to login mode
+            self.label.config(text="Login")
+            self.actionButton.config(text="Login", command=self.login)
+            self.toggleButton.config(text="Create an account")
+        else: #if in login mode, switch to signup mode
+            self.label.config(text="Sign Up")
+            self.actionButton.config(text="Sign Up", command=self.signup)
+            self.toggleButton.config(text="Already have an acocunt?")
+
+def launchApp():
+    root = tk.Tk()
+    app = LoginApp(root)
+    root.mainloop()

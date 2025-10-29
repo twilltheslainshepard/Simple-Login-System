@@ -35,18 +35,17 @@ def usernameExists(username):
 
 #Adds a new user to the database 
 def addUser(username, password):
-    os.makedirs(os.path.dirname(DBPATH), exist_ok = True)
     conn = sqlite3.connect(DBPATH) #connect to DB (/BASEDIR/data/users.db)
     c = conn.cursor() #create cursor, this enables us to execute SLQ commands
 
     try:
         c.execute('''INSERT INTO users (username, password) VALUES (?, ?)''', (username, password)) #insert new user into DB
         conn.commit()
-        print(f"Account created for {username}!")
         return True
     except sqlite3.IntegrityError:
-        print("Error: Account creation unsuccessful.")
-        return False
+        return False #Triggers if user already exists(PRIMARY KEY constraint)
+    except sqlite3.IntegrityError as e:
+        print(f"Database error: {e}")
     finally:
         conn.close()
 

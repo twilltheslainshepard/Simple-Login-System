@@ -2,7 +2,7 @@
 #Author: Thomas Williams (github.com/twilltheslainshepard)
 
 from interface import menu
-
+'''
 def main():
 
     usersChoice = menu.displayMenu()
@@ -13,7 +13,8 @@ def main():
         menu.signupMenu()
     if usersChoice == 3:
         exit()
-        
+''' 
 if __name__=="__main__":
-    main()
+    menu.launchApp()
+
 
